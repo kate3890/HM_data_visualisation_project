@@ -3,3 +3,9 @@ pandas
 requests
 streamlit
 plotly
+base64
+pathlib
+streamlit_authenticator
+yaml
+streamlit_option_menu
+datetime
