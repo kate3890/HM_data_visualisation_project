@@ -1,11 +1,8 @@
-numpy
 pandas
-requests
 streamlit
-plotly
-base64
-pathlib
-streamlit_authenticator
-yaml
+requests
+plotly.express
+pathlib 
+streamlit_authenticator 
 streamlit_option_menu
-datetime
+datetime 
