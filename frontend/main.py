@@ -16,10 +16,16 @@ from datetime import datetime
 api_key = "secret"
 api_base_url = "http://127.0.0.1:5000/api/"
 
+# Using the local link, for public link used: 
+#api_base_url = "https://api-dot-apiproject-381513.ew.r.appspot.com/api/"
+
 headers = {"X-API-KEY": api_key}
+
+# Fetching the data form MySQL through the API
 
 def fetch_data(endpoint, params=None):
     api_url = f"http://127.0.0.1:5000/api/{endpoint}"
+    #api_url = f"{api_base_url}{endpoint}"
     response = requests.get(api_url, headers=headers, params=params)
     
     if response.status_code == 200:
@@ -34,7 +40,6 @@ def fetch_data(endpoint, params=None):
     else:
         print(f"Error fetching data from API, status code: {response.status_code}, response content: {response.content}")
         return pd.DataFrame()
-
 
 
 # PAGE SETUP 
@@ -55,9 +60,9 @@ st.markdown("<h1 style='text-align: center;'>H&M Data - Dashboard</h1>", unsafe_
 
 # #AUTHENTICATOR 
 
-# Login details: Username: jsmith; Password: abc;
 
 #AUTHENTIOCATION PRE LOGIN 
+# Login details: Username: jsmith; Password: abc;
 
 hashed_passwords = stauth.Hasher(['abc', 'def']).generate()
 
@@ -106,19 +111,18 @@ age_df = fetch_data("customers")
 age_df = age_df["age"].to_list()
 
 
-#FINISHED TRYING
 
-
-# AUTHENTICATION POST LOGIN 
+# AUTHENTICATION AFTER LOGIN 
 
 if authentication_status:
     
-    #Horizontal tabs menu
+    #Creating the horizontal tabs menu
+    
     selected = option_menu(
-        menu_title=None, #required
-        options=["Customers", "Transactions", "Articles"], #required 
-        menu_icon="cast", #optional 
-        default_index=0, #optional 
+        menu_title=None, 
+        options=["Customers", "Transactions", "Articles"], 
+        menu_icon="cast",
+        default_index=0, 
         orientation="horizontal"
     )
     
@@ -129,6 +133,7 @@ if authentication_status:
     
     if selected == "Customers":
         
+        #Displaying KPIs at the top of the page
         kpi1, kpi2, kpi3  = st.columns(3)
         # Fetch customers data
         customers_df = fetch_data("customers")
@@ -153,7 +158,7 @@ if authentication_status:
         freq_options = ["NONE", "Regularly"]
         selected_freq = st.sidebar.selectbox("Fashion News Frequency", freq_options)
 
-        # Load customer data based on filters
+        # load customer data based on filters
         query_params = {
         "min_age": age_filtered_lst[0],
         "max_age": age_filtered_lst[1],
@@ -261,15 +266,10 @@ if authentication_status:
             float(min_price), float(max_price), (float(min_price), float(max_price))
         )
 
-        #Filter the transactions_df based on the selected price range:
+        #Filter the transactions based on the selected price range:
         filtered_transactions_df = transactions_df[(transactions_df["price"] >= selected_price_range[0]) & (transactions_df["price"] <= selected_price_range[1])]
-
-        # # Update query_params with the selected price range
-        #query_params["min_price"] = selected_price_range[0]
-        #query_params["max_price"] = selected_price_range[1]
         
-        
-        #Display KPIs 
+        #Displaing KPIs  at the top of the page 
         kpi7, kpi8, kpi9 = st.columns(3)
         
         # Display transactions table
@@ -345,47 +345,19 @@ if authentication_status:
         # Fetch articles data
         articles_df = fetch_data("articles")
         
-        
-        #SIDEBAR FOR ARTICLES
-        
-        # Load articles data based on filters
-        colour_options = ['Black', 'White', 'Beige', 'Grey', 'Blue', 'Pink', 'Lilac Purple', 'Red', 'Mole', 'Orange', 'Metal', 'Brown', 'Turquoise', 'Yellow', 'Khaki green', 'Green', 'Unknown', 'Yellowish Green', 'Bluish Green']
-        selected_colours = st.sidebar.multiselect(
-        "Select colours", 
-        colour_options, 
-        default=colour_options
-        )
-
-        group_options = ['Jersey Basic', 'Under, Nightwear', 'Socks and Tights', 'Jersey Fancy', 'Accessories', 'Trousers Denim', 'Outdoor', 'Shoes', 'Swimwear', 'Knitwear', 'Shirts', 'Trousers', 'Dressed', 'Shorts', 'Dresses Ladies', 'Skirts', 'Special Offers', 'Blouses', 'Unknown', 'Woven/Jersey/Knitted mix Baby', 'Dresses/Skirts girls']
-        selected_group = st.sidebar.selectbox(
-        "Select garment group", 
-        group_options,
-        index=group_options.index('Jersey Basic')
-        )
-        
-        # Load article data based on filters
-        query_params = {
-        "perceived_colours": ', '.join([f"'{colour}'" for colour in selected_colours]),
-        "garment_group_name": selected_group
-        }
-        articles_df = fetch_data("filtered_articles", params=query_params)
-        
-    
-        
+        #Displaying KPIs
         kpi10, kpi11, kpi12 = st.columns(3)
         
         #Display articles table
         st.header("Articles Data")
         st.write(articles_df)
         
-        #Calculating KPIs
+        #Calculating KPIs for Ladieswear and Menswear
         total_products = articles_df["article_id"].nunique()
-        # index_group_name = articles_df['index_group_name'].unique()
-        # st.write(index_group_name)
+        
+        
         Ladieswear = articles_df[articles_df.index_group_name == 'Ladieswear']
         perc_Ladieswear = (Ladieswear['article_id'].nunique() / total_products) * 100
-
-
   
         menswear = articles_df.index_group_name[articles_df.index_group_name == 'Menswear']
         perc_menswear = (menswear.count()/total_products)*100
@@ -413,9 +385,6 @@ if authentication_status:
         
         # Group articles data by colour
         articles_grouped = articles_df.groupby("perceived_colour_value_name").size().reset_index(name="count")
-
-        # Displaying filtered data
-        # Create a bar chart for filtered articles data
         # Group filtered articles data by colour
         articles_filtered_grouped = articles_df.groupby("perceived_colour_value_name").size().reset_index(name="count")
 
@@ -427,13 +396,40 @@ if authentication_status:
         st.header("Filtered Articles by Colour")
         st.plotly_chart(fig_articles_filtered)
 
-    
-    
+        
+        #SIDEBAR FOR ARTICLES
+        
+        # Load articles data based on filters (color)
+        colour_options = ['Black', 'White', 'Beige', 'Grey', 'Blue', 'Pink', 'Lilac Purple', 'Red', 'Mole', 'Orange', 'Metal', 'Brown', 'Turquoise', 'Yellow', 'Khaki green', 'Green', 'Unknown', 'Yellowish Green', 'Bluish Green']
+        selected_colours = st.sidebar.multiselect(
+        "Select colours", 
+        colour_options, 
+        default=colour_options
+        )
 
+        # Load articles data based on filters (garment)
+        group_options = ['Jersey Basic', 'Under, Nightwear', 'Socks and Tights', 'Jersey Fancy', 'Accessories', 'Trousers Denim', 'Outdoor', 'Shoes', 'Swimwear', 'Knitwear', 'Shirts', 'Trousers', 'Dressed', 'Shorts', 'Dresses Ladies', 'Skirts', 'Special Offers', 'Blouses', 'Unknown', 'Woven/Jersey/Knitted mix Baby', 'Dresses/Skirts girls']
+        selected_group = st.sidebar.selectbox(
+        "Select garment group", 
+        group_options,
+        index=group_options.index('Jersey Basic')
+        )
+        
+        # Load article data based on filters
+        query_params = {
+        "perceived_colours": ', '.join([f"'{colour}'" for colour in selected_colours]),
+        "garment_group_name": selected_group
+        }
+        articles_df = fetch_data("filtered_articles", params=query_params)
+        
+        
 
+#POST AUTHENTICATION 
+
+#If the password entered incorrectly 
 elif authentication_status == False:
     st.error('Username/password is incorrect')
-
+#If the password was not entered at all 
 elif authentication_status == None:
     st.warning('Please enter your username and password')
 

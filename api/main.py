@@ -1,20 +1,22 @@
+
 from flask import Flask, request, jsonify
-from flask_restful import Resource, Api
+from flask_restx import Resource, Api
 from pymysql import connect
 from pymysql.cursors import DictCursor
 
 app = Flask(__name__)
 api = Api(app)
 
-API_KEY = "secret"
-
 # Database connection parameters
+
 db_config = {
     "host": "34.175.52.97",
     "user": "root",
     "password": "G_4xbGLV4D{0aMD0",
     "database": "main",
 }
+
+# Connecting to the data in MySQL
 
 def get_db_connection():
     return connect(**db_config)
@@ -28,39 +30,24 @@ def fetch_data_from_db(query):
     connection.close()
     return {"data": data, "columns": columns}
 
+# Creating EndPoints fr each data set
+
 class Articles(Resource):
     def get(self):
-        api_key = request.headers.get("X-API-KEY")
-        if not api_key or api_key != API_KEY:
-            return {"error": "Invalid API key"}, 401
-
         return jsonify(fetch_data_from_db("SELECT * FROM articles LIMIT 1000"))
 
 class Transactions(Resource):
     def get(self):
-        api_key = request.headers.get("X-API-KEY")
-        if not api_key or api_key != API_KEY:
-            return {"error": "Invalid API key"}, 401
-
         return jsonify(fetch_data_from_db("SELECT * FROM transactions LIMIT 1000"))
 
 class Customers(Resource):
     def get(self):
-        api_key = request.headers.get("X-API-KEY")
-        if not api_key or api_key != API_KEY:
-            return {"error": "Invalid API key"}, 401
-        
-
         return jsonify(fetch_data_from_db("SELECT * FROM customers LIMIT 1000"))
-    
-    
-#Filtering customer data endpoint
+
+# Filtering customer data endpoint (used for filters)
+
 class FilteredCustomers(Resource):
     def get(self):
-        api_key = request.headers.get("X-API-KEY")
-        if not api_key or api_key != API_KEY:
-            return {"error": "Invalid API key"}, 401
-
         min_age = request.args.get("min_age", 0, type=int)
         max_age = request.args.get("max_age", 100, type=int)
         club_member_status = request.args.get("club_member_status", "ACTIVE")
@@ -76,31 +63,33 @@ class FilteredCustomers(Resource):
         """
         return jsonify(fetch_data_from_db(query))
 
-#Filtered articles data endpoint
+# Filtered articles data endpoint (used for filters)
+
 class FilteredArticles(Resource):
     def get(self):
-        api_key = request.headers.get("X-API-KEY")
-        if not api_key or api_key != API_KEY:
-            return {"error": "Invalid API key"}, 401
+        perceived_colours = request.args.get("perceived_colours", "")
+        garment_group_name = request.args.get("garment_group_name", "")
 
-        perceived_colours = request.args.get("perceived_colours")
-        garment_group_name = request.args.get("garment_group_name")
+        # Split the comma-separated string and wrap each color in quotes
+        perceived_colours_list = [f"{color.strip()}" for color in perceived_colours.split(",") if color.strip()]
+
+        # Join the list back into a string with commas and single quotes
+        perceived_colours_formatted = ",".join(f"'{color}'" for color in perceived_colours_list)
 
         query = f"""
-            SELECT *
-            FROM articles
-            WHERE perceived_colour_master_name IN ({perceived_colours})
-            AND garment_group_name = '{garment_group_name}'
-            LIMIT 1000;
+        SELECT *
+        FROM articles
+        WHERE perceived_colour_master_name IN ({perceived_colours_formatted})
+        AND garment_group_name = '{garment_group_name}'
+        LIMIT 1000;
         """
         return jsonify(fetch_data_from_db(query))
 
 
+# Linking the datasets to be used later in the stramlit app
 
 api.add_resource(FilteredArticles, "/api/filtered_articles")
 api.add_resource(FilteredCustomers, "/api/filtered_customers")
-
-
 api.add_resource(Articles, "/api/articles")
 api.add_resource(Transactions, "/api/transactions")
 api.add_resource(Customers, "/api/customers")
